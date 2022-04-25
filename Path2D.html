@@ -1,0 +1,31 @@
+!
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>曾小小晨的页面</title>
+  <style>
+    canvas {
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas" width="600" height="400"></canvas>
+  <script>
+    var ctx = document.getElementById('canvas').getContext('2d');
+    var path1 = new Path2D();
+    path1.rect(10, 10, 100, 100);
+
+    var path2 = new Path2D(path1);
+    path2.moveTo(180, 60);
+    path2.arc(130, 60, 50, 0, 2 * Math.PI)
+    ctx.fill(path2, 'evenodd');
+    // ctx.fill(path2, 'nonzero');
+    ctx.stroke(path2);
+  </script>
+</body>
+
+</html>

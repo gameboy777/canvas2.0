@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>曾小小晨的页面</title>
+  <style>
+    canvas {
+      border: 1px solid #000;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas" width="600" height="400"></canvas>
+  <script>
+    var ctx = document.getElementById('canvas').getContext('2d');
+    ctx.beginPath();
+    ctx.moveTo(100.5, 20.5);
+    ctx.lineTo(200.5, 20.5);
+    ctx.stroke();
+    ctx.moveTo(100.5, 40.5);
+    ctx.lineTo(200.5, 40.5);
+    ctx.lineTo(200.5, 80.5);
+    ctx.closePath();
+    ctx.strokeStyle = '#f00';
+    ctx.stroke();
+  </script>
+</body>
+
+</html>

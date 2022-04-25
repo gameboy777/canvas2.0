@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>曾小小晨的页面</title>
+    <style>
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="600" height="400"></canvas>
+    <script>
+        var ctx = document.getElementById( 'canvas' ).getContext( '2d' );
+        var w = canvas.width,
+                h = canvas.height;
+
+        var x = w / 2,
+                y = h / 2;
+
+        var inner = 80;
+        var outer = 200;
+        
+        ctx.moveTo( x - inner / 2, y - inner / 2 );
+        ctx.lineTo( x + inner / 2, y - inner / 2 );
+        ctx.lineTo( x + inner / 2, y + inner / 2 );
+        ctx.lineTo( x - inner / 2, y + inner / 2 );
+        ctx.closePath();
+
+        ctx.moveTo( x - outer / 2, y - outer / 2 );
+        ctx.lineTo( x - outer / 2, y + outer / 2 );
+        ctx.lineTo( x + outer / 2, y + outer / 2 );
+        ctx.lineTo( x + outer / 2, y - outer / 2 );
+        ctx.closePath();
+
+        ctx.fill();
+    </script>
+</body>
+</html>

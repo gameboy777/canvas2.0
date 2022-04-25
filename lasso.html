@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="haha"></canvas>
+</body>
+
+<script>
+    const canvas = document.getElementById('haha');
+    const width = canvas.width = window.innerWidth;
+    const height = canvas.height = window.innerHeight - 5;
+    const ctx = canvas.getContext('2d');
+    var points = [];
+    var paths = [];
+    var drawNow = false;
+
+    const draw = () => {
+
+        paths = [];
+        for (var i = 0; i < points.length; i++) {
+            if (i == 0) {
+                paths[i] = new Path2D();
+            } else {
+                paths[i] = new Path2D(paths[i - 1]);
+            }
+            paths[i].moveTo(points[i][0].x, points[i][0].y);
+            for (var j = 1; j < points[i].length; j++) {
+                paths[i].lineTo(points[i][j].x, points[i][j].y);
+            }
+        }
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "green";
+        ctx.fill(paths[paths.length - 1], 'nonzero')
+        ctx.stroke(paths[paths.length - 1]);
+    }
+
+    canvas.onmousedown = function (e) {
+        drawNow = true;
+        points.push([]);
+        points[points.length - 1].push({ x: e.clientX, y: e.clientY });
+        canvas.onmousemove = function (e) {
+            if (drawNow) {
+                points[points.length - 1].push({ x: e.clientX, y: e.clientY });
+                draw();
+            }
+        };
+        canvas.onmouseup = function () {
+            drawNow = false;
+        };
+    };
+
+</script>
+
+</html>
