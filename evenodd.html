@@ -27,7 +27,7 @@
       end = Math.PI * 3 / 2;
 
     ctx.arc(x, y, r, start, end);
-    ctx.fillStyle = '#D43D59';
+    ctx.fillStyle = 'red';
     ctx.fill();
 
     ctx.beginPath();
@@ -45,7 +45,7 @@
     // // 上左连下右
     ctx.lineTo(x + r * Math.sin(Math.PI / 5), y + r * Math.cos(Math.PI / 5));
 
-    ctx.fillStyle = '#246AB2';
+    ctx.fillStyle = 'blue';
     // fill填充规则---奇偶原则
     ctx.fill('evenodd');
   </script>
