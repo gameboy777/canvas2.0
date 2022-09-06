@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en" style="height: 100%">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="xlsx.core.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts@5.3.2/dist/echarts.min.js"></script>
+</head>
+
+<body style="height: 100%; margin: 0">
+  <input id="input_file" type="file" @change="readExcel" style="position: absolute;top: 0;left: 0;z-index: 1000;">导入
+  <div id="container1" style="height: 49%"></div>
+  <div id="container2" style="height: 49%;"></div>
+
+  <script>
+    console.log(XLSX)
+    var dom1 = document.getElementById("container1");
+    var dom2 = document.getElementById("container2");
+
+    var myChart1 = echarts.init(dom1);
+    var myChart2 = echarts.init(dom2);
+
+
+    function readExcel(e) {
+      let that = this
+      const files = e.target.files
+      if (files.length < 1) {
+        return false
+      } else if (!/\.(xls|xlsx)$/.test(files[0].name.toLowerCase())) {
+        return false
+      }
+      console.log(files)
+
+      const fileReader = new FileReader()
+      fileReader.readAsBinaryString(files[0])
+      // fileReader.readAsBinaryString(new Blob(['http://172.25.30.31:1219/shichang/ng_demo_data/CellPhoneDB/LN_cellphoneDB_0410.xlsx'],{type:""}))
+
+      fileReader.onload = (ev) => {
+        try {
+          const data = ev.target.result
+          const workbook = XLSX.read(data, {
+            type: 'binary'
+          }) // 读取数据
+          console.log(workbook);
+          const wsname = workbook.SheetNames[0] // 取第一张表
+          const ws = XLSX.utils.sheet_to_json(workbook.Sheets[wsname]) // 生成json表格内容
+          console.log(ws);
+
+          func('CD52_SIGLEC10', myChart1, ws)
+          func('CXCL12_CXCR4', myChart2, ws)
+        } catch (e) {
+          console.log(e)
+          return false
+        }
+      }
+    }
+
+    function func(str, chart, ws) {
+      let selected = ws.filter((val) => {
+        return val.interacting_pair == str
+      })[0]
+      // console.log(selected);
+      let nodes = [], links = [], nodeValue = {}, categories = [];
+      for (var key in selected) {
+        if (key.includes('|')) {
+          let temp = key.split('|');
+          links.push({ source: temp[0], target: temp[1], value: selected[key], lineStyle: { width: selected[key] } })
+          temp.forEach((val) => {
+            if (nodes.indexOf(val) == -1) {
+              nodes.push(val);
+              categories.push({ name: val });
+            }
+            if (nodeValue[val]) {
+              nodeValue[val] += selected[key];
+            } else {
+              nodeValue[val] = selected[key];
+            }
+          })
+        }
+      }
+      nodes.forEach((val, i, arr) => {
+        arr[i] = {
+          category: i,
+          id: val,
+          name: val,
+          x: parseInt(Math.random() * (1000 + 1)),
+          y: parseInt(Math.random() * (1000 + 1)),
+          symbolSize: 20,
+          value: nodeValue[val].toFixed(2),
+        }
+      })
+      console.log(nodes);
+      console.log(links);
+
+      option = {
+        title: {
+          text: str,
+          top: 'bottom',
+          left: 'right'
+        },
+        tooltip: {
+        },
+        legend: [
+          {
+            // selectedMode: 'single',
+            data: categories.map(function (a) {
+              return a.name;
+            })
+          }
+        ],
+        animationDuration: 1500,
+        animationEasingUpdate: 'quinticInOut',
+        series: [
+          {
+            name: 'Cell bin',
+            type: 'graph',
+            layout: 'none',
+
+            data: nodes,
+            links: links,
+            categories: categories,
+            roam: true,
+            edgeSymbol: ['arrow'],
+            label: {
+              show: true,
+              position: 'right',
+              formatter: '{b}'
+            },
+            lineStyle: {
+              color: 'source',
+              curveness: 0.3,
+            },
+            emphasis: {
+              focus: 'adjacency',
+              lineStyle: {
+                width: 10
+              }
+            }
+          }
+        ]
+      };
+      chart.setOption(option);
+    }
+
+    input_file.onchange = readExcel;
+  </script>
+</body>
+
+</html>
