@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绘制40万个点且不卡顿</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            background: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="haha" width="800" height="500"></canvas>
+</body>
+
+<script>
+    // 方案1, 卡顿
+    // let canvas = document.getElementById('haha');
+    // let ctx = canvas.getContext('2d');
+    // let random = Math.random;
+
+    // function draw() {
+    //     // 绘制点
+    //     var pointNum = canvas.width * canvas.height;
+    //     var pointR = 1;
+    //     var pointFillColor = '#000';
+    //     console.log(new Date());
+    //     for (var i = 1; i <= pointNum; ++i) {
+    //         var x = Math.floor(random() * (canvas.width + 1));
+    //         var y = Math.floor(random() * (canvas.height + 1));
+    //         drawPoint(x, y, pointR, pointFillColor);
+    //     }
+    //     console.log(new Date());
+    // }
+
+    // function drawPoint(x, y, r, pointColor) {
+    //     // if (x > 799) {
+    //     //     console.log(x)
+    //     // }
+    //     ctx.beginPath();
+    //     ctx.arc(x, y, r, 0, Math.PI * 2, false);
+    //     ctx.fillStyle = pointColor;
+    //     ctx.fill();
+    //     ctx.closePath();
+    // }
+    // draw();
+
+
+    let canvas = document.getElementById('haha');
+    let ctx = canvas.getContext('2d');
+    var cw = 800, ch = 500, toggle = true
+
+    function generateNoise(context) {
+        var imageData = context.createImageData(cw, ch),
+            buffer32 = new Uint32Array(imageData.data.buffer),
+            len = buffer32.length,
+            i = 0
+
+        for (; i < len;)
+            buffer32[i++] = ((255 * Math.random()) | 0) << 24
+
+        context.putImageData(imageData, 0, 0)
+    };
+
+    (function loop() {
+        toggle = !toggle
+        if (toggle) {
+            requestAnimationFrame(loop)
+            return
+        }
+        generateNoise(ctx)
+        requestAnimationFrame(loop)
+    })()
+</script>
+
+</html>
