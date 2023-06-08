@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>封装绘制方法</title>
+  <link rel="stylesheet" href="./css/common.css" />
+</head>
+
+<body>
+  <script src="./utils/webgl-helper.js"></script>
+  <script src="./utils/webgl-matrix.js"></script>
+  <script src="./utils/vector3.js"></script>
+  <script src="./utils/geometry.js"></script>
+  <script src="./utils/math.js"></script>
+  <script src="./utils/model.js"></script>
+
+  <!-- 顶点着色器源码 -->
+  <script type="shader-source" id="vertexShader">
+      precision mediump float;
+      attribute vec4 a_Color;
+      varying vec4 v_Color;
+      attribute vec3 a_Position;
+      uniform mat4 u_Matrix;
+      void main(){
+        gl_Position = u_Matrix * vec4(a_Position,1);
+        v_Color = a_Color;
+      }
+    </script>
+  <!-- 顶点着色器源码 -->
+  <script type="shader-source" id="fragmentShader">
+      // 接收顶点坐标 (x, y)
+      precision mediump float;
+      varying vec4 v_Color;
+      void main(){
+        gl_FragColor = v_Color;
+      }
+    </script>
+
+  <canvas id="canvas"></canvas>
+  <div class="operation-container"></div>
+  <script>
+    var Vector3 = window.lib3d.Vector3;
+    var rand = window.lib3d.math.rand;
+    //获取canvas
+    var canvas = getCanvas('#canvas');
+    resizeCanvas(canvas);
+    //获取webgl绘图环境
+    var gl = getContext(canvas);
+    //创建着色器程序
+    var program = createProgramFromScript(
+      gl,
+      'vertexShader',
+      'fragmentShader'
+    );
+    //使用创建好的着色器程序
+    gl.useProgram(program.program);
+
+
+    let cube = createCube(2, 2, 2);
+    // 将带索引的立方体顶点数据转化成无索引的顶点数据
+    cube = transformIndicesToUnIndices(cube);
+    // 为顶点数据添加颜色信息
+    createColorForVertex(cube);
+    let sphere = createSphere(1, 10, 10);
+    // 将带索引的球体顶点数据转化成无索引的顶点数据
+    sphere = transformIndicesToUnIndices(sphere);
+    // 为顶点数据添加颜色信息
+    createColorForVertex(sphere);
+
+    // 生成立方体的顶点缓冲对象
+    let cubeBufferInfo = createBufferInfoFromObject(gl, cube);
+    // 生成球体的顶点缓冲对象
+    let sphereBufferInfo = createBufferInfoFromObject(gl, sphere);
+
+    var aspect = canvas.width / canvas.height;
+    var fieldOfViewRadians = 60;
+    var projectionMatrix = matrix.perspective(
+      fieldOfViewRadians,
+      aspect,
+      2,
+      900
+    );
+    // 计算相机的位置矩阵
+    var cameraPosition = new Vector3(0, 0, 10);
+    var target = new Vector3(0, 0, 0);
+    var up = new Vector3(0, 1, 0);
+    var cameraMatrix = matrix.lookAt(cameraPosition, target, up);
+    var viewMatrix = matrix.inverse(cameraMatrix);
+    var modelMatrix = matrix.identity();
+    var playing = false;
+
+    let modelList = new List();
+    let renderList = new List();
+    for (var i = 0; i < 100; ++i) {
+      var object = new Model();
+      if (i % 2 == 0) {
+        object.setBufferInfo(cubeBufferInfo);
+      } else {
+        object.setBufferInfo(sphereBufferInfo);
+      }
+      // 设置模型的位置
+      object.translate(rand(-10, 10), rand(-10, 10), rand(-10, 10));
+      // 设置模型的旋转角度
+      object.rotate(rand(0, 90));
+      // 预渲染
+      object.preRender(viewMatrix, projectionMatrix);
+      // 设置模型的 uniforms 属性。
+      object.setUniforms({
+        u_ModelMatrix: object.u_ModelMatrix,
+        u_Matrix: object.u_Matrix,
+        u_ColorFactor: new Float32Array([rand(0.5, 0.75), rand(0.5, 0.75), rand(0.25, 0.5)])
+      })
+
+      modelList.add(object);
+      // 根据模型对象创建渲染对象，并将渲染对象添加到渲染列表中
+      renderList.add({
+        programInfo: program,
+        model: object,
+        primitive: gl.TRIANGLES,
+        renderType: 'drawArrays'
+      });
+    }
+
+    function render() {
+      // 重新设置模型的状态
+      modelList.forEach(function (object) {
+        object.rotateX(object.rotation[0] + rand(0.2, 0.5));
+        object.rotateY(object.rotation[1] + rand(0.2, 0.5));
+        object.rotateZ(object.rotation[1] + rand(0.2, 0.5));
+        object.preRender(viewMatrix, projectionMatrix);
+        object.setUniforms({
+          u_ModelMatrix: object.u_ModelMatrix,
+          u_Matrix: object.u_Matrix,
+        })
+      })
+      // 执行渲染
+      let lastProgram;
+      let lastBufferInfo;
+      renderList.forEach(function (object) {
+        let programInfo = object.programInfo;
+        let bufferInfo = object.model.bufferInfo;
+        let uniforms = object.model.uniforms;
+        let bindBuffers = false;
+        if (programInfo !== lastProgram) {
+          lastProgram = programInfo;
+          gl.useProgram(programInfo.program);
+          bindBuffers = true;
+        }
+
+        if (bindBuffers || bufferInfo !== lastBufferInfo) {
+          lastBufferInfo = bufferInfo;
+          setBufferInfos(gl, programInfo, bufferInfo);
+        }
+        setUniforms(programInfo, uniforms);
+
+        // 绘制
+        if (object.renderType === 'drawElements') {
+          if (bufferInfo.indices) {
+            gl.drawElements(object.primitive, bufferInfo.indices.length, gl.UNSIGNED_SHORT, 0);
+            return;
+          } else {
+            console.warn('model buffer does not support indices to draw');
+            return;
+          }
+        } else {
+          gl.drawArrays(gl[object.primitive], 0, bufferInfo.elementsCount);
+        }
+      });
+
+      if (!playing) {
+        return;
+      }
+      requestAnimationFrame(render);
+    }
+
+    render();
+  </script>
+</body>
+
+</html>
