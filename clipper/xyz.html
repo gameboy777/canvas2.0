@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>XYZ</title>
+  <script src="clipper_unminified.js"></script>
+</head>
+
+<body>
+  <h2>Javascript Clipper Library / XYZ</h2>
+  <div id="svgcontainer"></div>
+  <script>
+    /*
+    var subj_paths = [[{X:10,Y:10,Z:1},{X:110,Y:10,Z:2},{X:110,Y:110,Z:3},{X:10,Y:110,Z:4}],
+                      [{X:20,Y:20,Z:5},{X:20,Y:100,Z:6},{X:100,Y:100,Z:7},{X:100,Y:20,Z:8}]]; 
+    var clip_paths = [[{X:50,Y:50,Z:9},{X:150,Y:50,Z:10},{X:150,Y:150,Z:11},{X:50,Y:150,Z:12}],
+                      [{X:60,Y:60,Z:13},{X:60,Y:140,Z:14},{X:140,Y:140,Z:15},{X:140,Y:60,Z:16}]];
+    */
+
+    var subj_paths = [
+      [{ X: 10, Y: 10, Z: 0 }, { X: 110, Y: 10, Z: 0 }, { X: 110, Y: 110, Z: 0 }, { X: 10, Y: 110, Z: 0 }],
+      [{ X: 20, Y: 20, Z: 0 }, { X: 20, Y: 100, Z: 0 }, { X: 100, Y: 100, Z: 0 }, { X: 100, Y: 20, Z: 0 }]
+    ];
+    var clip_paths = [
+      [{ X: 50, Y: 50, Z: 0 }, { X: 150, Y: 50, Z: 0 }, { X: 150, Y: 150, Z: 0 }, { X: 50, Y: 150, Z: 0 }],
+      [{ X: 60, Y: 60, Z: 0 }, { X: 60, Y: 140, Z: 0 }, { X: 140, Y: 140, Z: 0 }, { X: 140, Y: 60, Z: 0 }]
+    ];
+
+
+    var subj_paths_orig = JSON.parse(JSON.stringify(subj_paths));
+    var clip_paths_orig = JSON.parse(JSON.stringify(clip_paths));
+
+    ClipperLib.use_xyz = true;
+
+    var cpr = new ClipperLib.Clipper();
+
+    var z = 11111;
+    var ZFillCallback = function (bot1, top1, bot2, top2, pt) {
+      pt.Z = z;
+    }
+
+    cpr.ZFillFunction = ZFillCallback;
+
+    var scale = 100;
+    ClipperLib.JS.ScaleUpPaths(subj_paths, scale);
+    ClipperLib.JS.ScaleUpPaths(clip_paths, scale);
+
+    cpr.AddPaths(subj_paths, ClipperLib.PolyType.ptSubject, true);  // true means closed path
+    cpr.AddPaths(clip_paths, ClipperLib.PolyType.ptClip, true);
+
+    var solution_paths = new ClipperLib.Paths();
+    var succeeded = cpr.Execute(ClipperLib.ClipType.ctDifference, solution_paths, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+
+    // Scale down coordinates and draw ...
+    var svg = '<svg style="background-color:#dddddd" width="160" height="160">';
+    svg += '<path stroke="black" fill="yellow" stroke-width="2" d="' + paths2string(solution_paths, scale) + '"/>';
+    svg += paths2circles(solution_paths, scale);
+    svg += '</svg>';
+    svg += '<br><b>Operation:</b> Difference';
+    svg += '<br><b>Subject paths:</b><br>' + JSON.stringify(subj_paths_orig);
+    svg += '<br><b>Clip paths:</b><br>' + JSON.stringify(clip_paths_orig);
+
+    ClipperLib.JS.ScaleDownPaths(solution_paths, scale);
+
+    svg += '<br><b>Solution paths:</b><br>' +
+      JSON.stringify(solution_paths)
+        .replace(/"Z":11111/g, '<span style="color:red">"Z":11111</span>')
+        .replace(/"Z":0/g, '<span style="color:green">"Z":0</span>');
+
+    document.getElementById("svgcontainer").innerHTML = svg;
+
+    // Converts Paths to SVG path string
+    // and scales down the coordinates
+    function paths2string(paths, scale) {
+      var svgpath = "", i, j;
+      if (!scale) scale = 1;
+      for (i = 0; i < paths.length; i++) {
+        for (j = 0; j < paths[i].length; j++) {
+          if (!j) svgpath += "M";
+          else svgpath += "L";
+          svgpath += (paths[i][j].X / scale) + ", " + (paths[i][j].Y / scale);
+        }
+        svgpath += "Z";
+      }
+      if (svgpath == "") svgpath = "M0,0";
+      return svgpath;
+    }
+
+    // Scales down the coordinates
+    // and draw circles
+    function paths2circles(paths, scale) {
+      var circles = "", i, j, fill;
+      if (!scale) scale = 1;
+      for (i = 0; i < paths.length; i++) {
+        for (j = 0; j < paths[i].length; j++) {
+          if (paths[i][j].Z === z) fill = 'red';
+          else fill = 'green';
+          circles += '<circle fill="' + fill + '" cx="' + (paths[i][j].X / scale) + '" cy="' + (paths[i][j].Y / scale) + '" r="3"/>';
+        }
+      }
+      return circles;
+    }
+  </script>
+</body>
+
+</html>

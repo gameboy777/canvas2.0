@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+  <style>
+    html,
+    body {
+      margin: 0;
+    }
+  </style>
+  <script src="./clipper.js"></script>
+</head>
+
+<body>
+  <canvas id="haha"></canvas>
+</body>
+
+<script>
+  const canvas = document.getElementById("haha");
+  const width = (canvas.width = window.innerWidth);
+  const height = (canvas.height = window.innerHeight - 5);
+  const ctx = canvas.getContext("2d");
+  var points = [
+    {
+      type: "yes",
+      arr: [],
+    },
+  ];
+  var drawNow = false;
+  let canDraw = false;
+
+  var cpr = new ClipperLib.Clipper();
+  let solution_paths;
+
+  document.addEventListener("keydown", (event) => {
+    if (event.code === "ShiftLeft") {
+      canDraw = "yes";
+    } else if (event.code === "AltLeft") {
+      canDraw = "no";
+    }
+    // if (canDraw && drawNow) {
+    //     points[points.length - 1].type = canDraw;
+    // }
+  });
+
+  document.addEventListener("keyup", (event) => {
+    canDraw = false;
+  });
+
+  const draw = () => {
+    ctx.clearRect(0, 0, width, height);
+    for (var i = 0; i < points.length; i++) {
+      ctx.beginPath();
+
+      if (i == 0) {
+        for (i2 = 0; i2 < points[i].arr.length; i2++) {
+          for (j = 0; j < points[i].arr[i2].length; j++) {
+            x = points[i].arr[i2][j].X;
+            y = points[i].arr[i2][j].Y;
+            if (!j) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+        }
+      } else {
+        ctx.moveTo(points[i].arr[0].X, points[i].arr[0].Y);
+        for (var j = 1; j < points[i].arr.length; j++) {
+          ctx.lineTo(points[i].arr[j].X, points[i].arr[j].Y);
+        }
+        ctx.closePath();
+      }
+
+      if (points[i].type == "yes") {
+        ctx.fillStyle = "green";
+      } else if (points[i].type == "no") {
+        ctx.fillStyle = "#fff";
+      }
+      ctx.stroke();
+      ctx.fill();
+    }
+  };
+
+  canvas.onmousedown = function (e) {
+    drawNow = true;
+    if (!points[0].arr.length) {
+      points[0].arr.push([{ X: e.clientX, Y: e.clientY }]);
+    } else {
+      points.push({ type: canDraw, arr: [] });
+      points[points.length - 1].arr.push({ X: e.clientX, Y: e.clientY });
+    }
+    canvas.onmousemove = function (e) {
+      if (drawNow && canDraw) {
+        if (points.length == 2) {
+          points[points.length - 1].arr.push({ X: e.clientX, Y: e.clientY });
+        } else {
+          points[points.length - 1].arr[0].push({
+            X: e.clientX,
+            Y: e.clientY,
+          });
+        }
+        draw();
+      }
+    };
+    canvas.onmouseup = function () {
+      drawNow = false;
+      if (points.length == 2) {
+        if (points[points.length - 1].arr.length < 3) {
+          points.pop();
+        }
+      } else if (points[0].arr[0].length < 3) {
+        points[0].arr.pop();
+      }
+      console.log(points);
+      operateShape();
+    };
+  };
+
+  function operateShape() {
+    if (points.length < 2) return;
+    cpr.Clear();
+    solution_paths = [];
+    cpr.AddPaths(points[0].arr, ClipperLib.PolyType.ptSubject, true);
+    cpr.AddPath(points[1].arr, ClipperLib.PolyType.ptClip, true);
+    cpr.Execute(points[1].type == "no" ? 2 : 1, solution_paths, 1, 1);
+    console.log(solution_paths)
+    points = [
+      {
+        type: "yes",
+        arr: solution_paths,
+      },
+    ];
+    console.log(points);
+    draw();
+  }
+</script>
+
+</html>
