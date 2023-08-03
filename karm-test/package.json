@@ -1,0 +1,17 @@
+{
+  "name": "karm-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {
+    "jasmine-core": "^5.0.1",
+    "karma": "^6.4.2",
+    "karma-jasmine": "^5.1.0",
+    "karma-phantomjs-launcher": "^1.0.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
