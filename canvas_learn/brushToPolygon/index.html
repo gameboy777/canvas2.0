@@ -11,99 +11,111 @@
         body {
             margin: 0;
         }
+
+        .canvas_container {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .canvas_container canvas {
+            border: 1px solid #000;
+        }
+
+        .button_container {
+            padding: 10px 20px;
+        }
+
+        .button_container button {
+            margin-top: 10px;
+        }
     </style>
     <script src="clipper.js"></script>
 </head>
 
 <body>
-    <canvas id="myCanvas"></canvas>
-    <div onclick="paint()">未合并但轨迹点绘制</div>
-    <div onclick="paint2()">合并且轨迹点绘制</div>
-    <canvas id="myCanvas2"></canvas>
+    <div class="canvas_container">
+        <canvas id="myCanvas"></canvas>
+        <canvas id="myCanvas2"></canvas>
+    </div>
+    <div class="button_container">
+        <button onclick="drawCircle(width / 2, height / 2, 50, 3)">半径50点3</button>
+        <button onclick="drawCircle(width / 2, height / 2, 50, 10)">半径50点10</button>
+        <button onclick="drawCircle(width / 2, height / 2, 50, 20)">半径50点20</button>
+        <button onclick="drawCircle(width / 2, height / 2, 200, 20)">半径200点20</button>
+        <button onclick="drawCircle(width / 2, height / 2, 200, 100)">半径200点100</button>
+        <button onclick="setBrushThickness(20)">设置画笔粗细20即半径10</button>
+        <button onclick="setBrushThickness(100)">设置画笔粗细100即半径50</button>
+        <button onclick="isSmooth = true">平滑处理</button>
+        <button onclick="isSmooth = false">不平滑处理</button>
+        <button onclick="paint()">未合并但轨迹点绘制</button>
+        <button onclick="paint2()">合并且轨迹点绘制</button>
+    </div>
 </body>
 
 <script>
     function getCirclePoints(centerX, centerY, radius, pointCount) {
         var angleStep = 360 / pointCount; // 计算角度间隔
         var points = [];
-
         for (var i = 0; i < pointCount; i++) {
             var angle = (i * angleStep) * Math.PI / 180; // 将角度转换成弧度
-
             var x = centerX + radius * Math.cos(angle); // 计算 x 坐标
             var y = centerY + radius * Math.sin(angle); // 计算 y 坐标
-
             points.push({ X: x, Y: y }); // 将坐标添加到数组中
         }
-
         return points;
     }
-
-
-    // // 示例用法
+    // 示例用法
     // var circlePoints = getCirclePoints(100, 100, 50, 10); // 获取圆上 10 个轨迹点坐标
     // console.log(circlePoints);
 
+    function drawCircle(dx, dy, radius, pointCount) {
+        let circlePoints = getCirclePoints(dx, dy, radius, pointCount);
+        ctx.clearRect(0, 0, width, height);
+        ctx.beginPath();
+        for (let i = 0; i < circlePoints.length; i++) {
+            if (i === 0) {
+                ctx.moveTo(circlePoints[i].X, circlePoints[i].Y);
+            } else {
+                ctx.lineTo(circlePoints[i].X, circlePoints[i].Y);
+            }
+        }
+        ctx.closePath();
+        ctx.stroke();
+    }
 
-
-
+    function setBrushThickness(num) {
+        points = [];
+        resultPahts = [];
+        radius = num / 2;
+    }
 
     const canvas = document.getElementById('myCanvas');
-    const width = canvas.width = window.innerWidth;
-    const height = canvas.height = window.innerHeight - 5;
-    const ctx = canvas.getContext('2d');
-
     const canvas2 = document.getElementById('myCanvas2');
-    canvas2.width = window.innerWidth;
-    canvas2.height = window.innerHeight - 5;
+    const ctx = canvas.getContext('2d');
     const ctx2 = canvas2.getContext('2d');
+    const width = canvas.width = canvas2.width = window.innerWidth / 2 - 15;
+    const height = canvas.height = canvas2.height = window.innerHeight - 200;
 
-    var points = [];
-    var resultPahts = [];
-    // var paths = [];
-    var drawNow = false;
-    var radius = 10;
-    var scale = 100;
-
-
-    // function drawCircle() {
-    //     ctx.clearRect(0, 0, width, height);
-    //     ctx.beginPath();
-    //     let circlePoints = getCirclePoints(300, 300, 100, 20)
-    //     for (let i = 0; i < circlePoints.length; i++) {
-    //         if (i === 0) {
-    //             ctx.moveTo(circlePoints[i].X, circlePoints[i].Y);
-    //         } else {
-    //             ctx.lineTo(circlePoints[i].X, circlePoints[i].Y);
-    //         }
-    //     }
-    //     ctx.closePath();
-    //     ctx.stroke();
-    // }
-
-    // drawCircle();
-
-
+    let points = [];
+    let resultPahts = [];
+    let drawNow = false;
+    // 半径
+    let radius = 10;
+    // clipper
+    let scale = 100;
+    // 是否平滑处理
+    let isSmooth = false;
 
     const draw = () => {
         ctx.clearRect(0, 0, width, height);
         ctx.beginPath();
         for (var i = 0; i < points.length; i++) {
-            // if (i == 0) {
-            //     paths[i] = new Path2D();
-            // } else {
-            //     paths[i] = new Path2D(paths[i - 1]);
-            // }
-            // paths[i].moveTo(points[i][0].x, points[i][0].y);
             for (var j = 0; j < points[i].length; j++) {
                 ctx.moveTo(points[i][j].X, points[i][j].Y);
-                // paths[i].lineTo(points[i][j].x, points[i][j].y);
                 ctx.arc(points[i][j].X, points[i][j].Y, radius, 0, Math.PI * 2, false);
-                // ctx.closePath();
             }
         }
-
-        ctx.fillStyle = "green";
+        ctx.fillStyle = "blue";
         ctx.fill()
         // ctx.stroke();
     }
@@ -113,53 +125,32 @@
         points.push([]);
         points[points.length - 1].push({ X: e.clientX, Y: e.clientY });
 
-        // var mouseX1 = e.offsetX;
-        // var mouseY1 = e.offsetY;
-        // ctx.beginPath();
-        // ctx.arc(mouseX1, mouseY1, 10, 0, 2 * Math.PI, false);
-        // ctx.fillStyle = '#000000';
-        // ctx.fill();
-
-
         canvas.onmousemove = function (e) {
             if (drawNow) {
-
-
-                // 平滑处理画笔轨迹
                 let arr = points[points.length - 1];
-                let xdistance = e.clientX - arr[arr.length - 1].X;
-                let ydistance = e.clientY - arr[arr.length - 1].Y;
-                if (Math.abs(xdistance) >= (0.5 * radius) || Math.abs(ydistance) >= (0.5 * radius)) {
-                    let num = Math.max(Math.ceil(Math.abs(xdistance) / 0.5 / radius), Math.ceil(Math.abs(ydistance) / 0.5 / radius));
-                    // console.log("-----------", { x: e.clientX, y: e.clientY }, num, xdistance, ydistance)
-                    let x = arr[arr.length - 1].X;
-                    let y = arr[arr.length - 1].Y;
-                    for (let i = 1; i < num; i++) {
-                        // console.log({ x: Math.round(x + xdistance/num*i), y: Math.round(y + ydistance/num*i) })
-                        arr.push({ X: Math.round(x + xdistance / num * i), Y: Math.round(y + ydistance / num * i) });
+                if (isSmooth) {
+                    // 平滑处理画笔轨迹
+                    let xdistance = e.clientX - arr[arr.length - 1].X;
+                    let ydistance = e.clientY - arr[arr.length - 1].Y;
+                    if (Math.abs(xdistance) >= 0.5 * radius || Math.abs(ydistance) >= 0.5 * radius) {
+                        let x = arr[arr.length - 1].X;
+                        let y = arr[arr.length - 1].Y;
+                        let num = Math.max(Math.ceil(Math.abs(xdistance) / 0.5 / radius), Math.ceil(Math.abs(ydistance) / 0.5 / radius));
+                        for (let i = 1; i < num; i++) {
+                            arr.push({ X: Math.round(x + xdistance / num * i), Y: Math.round(y + ydistance / num * i) });
+                        }
                     }
                 }
-
-
                 arr.push({ X: e.clientX, Y: e.clientY });
-
-                // var mouseX = e.offsetX;
-                // var mouseY = e.offsetY;
-                // ctx.beginPath();
-                // ctx.arc(mouseX, mouseY, 10, 0, 2 * Math.PI, false);
-                // ctx.fillStyle = '#000000';
-                // ctx.fill();
-
                 draw();
             }
         };
+
         canvas.onmouseup = function () {
-
-
             let arr = points[points.length - 1];
-            var solution_paths = new ClipperLib.Paths();
             var cpr = new ClipperLib.Clipper();
-            console.log(arr);
+            var solution_paths = new ClipperLib.Paths();
+            console.log(arr.length)
             if (arr.length > 1) {
                 for (let i = 0; i < arr.length; i++) {
                     let nowPoints = getCirclePoints(arr[i].X, arr[i].Y, radius, 20);
@@ -222,62 +213,62 @@
         ctx2.beginPath();
         for (let i = 0; i < solution_paths.length; i++) {
             for (let j = 0; j < solution_paths[i].length; j++) {
-                    if (j === 0) {
-                        ctx2.moveTo(solution_paths[i][j].X / scale, solution_paths[i][j].Y / scale);
-                    } else {
-                        ctx2.lineTo(solution_paths[i][j].X / scale, solution_paths[i][j].Y / scale);
-                    }
+                if (j === 0) {
+                    ctx2.moveTo(solution_paths[i][j].X / scale, solution_paths[i][j].Y / scale);
+                } else {
+                    ctx2.lineTo(solution_paths[i][j].X / scale, solution_paths[i][j].Y / scale);
+                }
             }
 
         }
         ctx2.closePath();
-            ctx2.fillStyle = "red";
-            ctx2.fill()
+        ctx2.fillStyle = "red";
+        ctx2.fill()
     }
 
 
-//     var canvas = document.getElementById('myCanvas');
-// var ctx = canvas.getContext('2d');
+    // var canvas = document.getElementById('myCanvas');
+    // var ctx = canvas.getContext('2d');
 
-// var circleRadius = 10;
-// var isDrawing = false;
-// canvas.addEventListener('mousedown', function() {
-//   isDrawing = true;
-// });
+    // var circleRadius = 10;
+    // var isDrawing = false;
+    // canvas.addEventListener('mousedown', function () {
+    //     isDrawing = true;
+    // });
 
-// canvas.addEventListener('mousemove', function(e) {
-//   if (isDrawing) {
-//       console.log(1)
-//       var mouseX = e.offsetX;
-//       var mouseY = e.offsetY;
+    // canvas.addEventListener('mousemove', function (e) {
+    //     if (isDrawing) {
+    //         console.log(1)
+    //         var mouseX = e.offsetX;
+    //         var mouseY = e.offsetY;
 
-//       ctx.beginPath();
-//       ctx.arc(mouseX, mouseY, circleRadius, 0, 2 * Math.PI, false);
-//       ctx.fillStyle = '#000000';
-//       ctx.fill();
-//   }
-// });
+    //         ctx.beginPath();
+    //         ctx.arc(mouseX, mouseY, circleRadius, 0, 2 * Math.PI, false);
+    //         ctx.fillStyle = '#000000';
+    //         ctx.fill();
+    //     }
+    // });
 
-// canvas.addEventListener('mouseup', function() {
-//   isDrawing = false;
-// });
+    // canvas.addEventListener('mouseup', function () {
+    //     isDrawing = false;
+    // });
 
-// canvas.addEventListener('mouseout', function() {
-//   isDrawing = false;
-// });
+    // canvas.addEventListener('mouseout', function () {
+    //     isDrawing = false;
+    // });
 
-// // 清空画布的函数
-// function clearCanvas() {
-//   ctx.clearRect(0, 0, canvas.width, canvas.height);
-// }
+    // // 清空画布的函数
+    // function clearCanvas() {
+    //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // }
 
-// // 变化画布的函数
-// function draw() {
-// //   clearCanvas();
-//   requestAnimationFrame(draw);
-// }
+    // // 变化画布的函数
+    // function draw() {
+    //     //   clearCanvas();
+    //     requestAnimationFrame(draw);
+    // }
 
-// draw();
+    // draw();
 </script>
 
 </html>
