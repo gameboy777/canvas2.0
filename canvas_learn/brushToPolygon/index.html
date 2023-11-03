@@ -21,6 +21,16 @@
             border: 1px solid #000;
         }
 
+        .title_container {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        .title_container span {
+            width: 50%;
+            text-align: center;
+        }
+
         .button_container {
             padding: 10px 20px;
         }
@@ -36,6 +46,10 @@
     <div class="canvas_container">
         <canvas id="myCanvas"></canvas>
         <canvas id="myCanvas2"></canvas>
+    </div>
+    <div class="title_container">
+        <span>画笔绘制</span>
+        <span>画笔的多边形轨迹点绘制</span>
     </div>
     <div class="button_container">
         <button onclick="drawCircle(width / 2, height / 2, 50, 3)">半径50点3</button>
@@ -100,7 +114,7 @@
     let resultPahts = [];
     let drawNow = false;
     // 半径
-    let radius = 10;
+    let radius = 1;
     // clipper
     let scale = 100;
     // 是否平滑处理
@@ -146,39 +160,37 @@
             }
         };
 
-        canvas.onmouseup = function () {
-            let arr = points[points.length - 1];
-            var cpr = new ClipperLib.Clipper();
-            var solution_paths = new ClipperLib.Paths();
-            console.log(arr.length)
-            if (arr.length > 1) {
-                for (let i = 0; i < arr.length; i++) {
-                    let nowPoints = getCirclePoints(arr[i].X, arr[i].Y, radius, 20);
-                    ClipperLib.JS.ScaleUpPath(nowPoints, scale);
-                    if (i === 0) {
-                        cpr.AddPath(nowPoints, ClipperLib.PolyType.ptSubject, true);
-                    } else {
-                        cpr.AddPath(nowPoints, ClipperLib.PolyType.ptClip, true);
+        canvas.onmouseup = canvas.onmouseout = function () {
+            if (drawNow) {
+                let arr = points[points.length - 1];
+                var cpr = new ClipperLib.Clipper();
+                var solution_paths = new ClipperLib.Paths();
+                if (arr.length > 1) {
+                    for (let i = 0; i < arr.length; i++) {
+                        let nowPoints = getCirclePoints(arr[i].X, arr[i].Y, radius, 20);
+                        ClipperLib.JS.ScaleUpPath(nowPoints, scale);
+                        if (i === 0) {
+                            cpr.AddPath(nowPoints, ClipperLib.PolyType.ptSubject, true);
+                        } else {
+                            cpr.AddPath(nowPoints, ClipperLib.PolyType.ptClip, true);
+                        }
                     }
+                    cpr.Execute(ClipperLib.ClipType.ctUnion, solution_paths, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
+                    resultPahts.push(solution_paths);
+                    // 长度为1说明是点了一下，并没有move，暂时舍弃
+                } else {
+                    points.pop();
+                    draw();
                 }
-                cpr.Execute(ClipperLib.ClipType.ctUnion, solution_paths, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
-                resultPahts.push(solution_paths);
-            } else {
-                resultPahts.push([])
+                console.log(resultPahts);
+                // paint2();
+                drawNow = false;
             }
-            console.log(resultPahts)
-
-
-
-            drawNow = false;
         };
     };
 
-
     function paint() {
         ctx2.clearRect(0, 0, width, height);
-
-        console.log(222)
         for (let i = 0; i < resultPahts.length; i++) {
             ctx2.beginPath();
             for (let j = 0; j < resultPahts[i].length; j++) {
@@ -194,12 +206,11 @@
             ctx2.fillStyle = "red";
             ctx2.fill()
         }
-        // ctx2.stroke();
     }
 
     function paint2() {
-        var solution_paths = new ClipperLib.Paths();
         var cpr = new ClipperLib.Clipper();
+        var solution_paths = new ClipperLib.Paths();
         for (let i = 0; i < resultPahts.length; i++) {
             if (i === 0) {
                 cpr.AddPaths(resultPahts[i], ClipperLib.PolyType.ptSubject, true);
@@ -210,6 +221,7 @@
         cpr.Execute(ClipperLib.ClipType.ctUnion, solution_paths, ClipperLib.PolyFillType.pftNonZero, ClipperLib.PolyFillType.pftNonZero);
         console.log(solution_paths)
 
+        ctx2.clearRect(0, 0, width, height);
         ctx2.beginPath();
         for (let i = 0; i < solution_paths.length; i++) {
             for (let j = 0; j < solution_paths[i].length; j++) {
@@ -219,7 +231,6 @@
                     ctx2.lineTo(solution_paths[i][j].X / scale, solution_paths[i][j].Y / scale);
                 }
             }
-
         }
         ctx2.closePath();
         ctx2.fillStyle = "red";
